@@ -1,4 +1,6 @@
 """
+This is the final result after using Claude to polish my code
+
 Weather API -> Snowflake pipeline.
 
 For every US city in city_final_list.json, fetches current weather data from
