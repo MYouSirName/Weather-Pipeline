@@ -1,100 +1,98 @@
 # Weather Data Pipeline
 
-Pipeline em Python que coleta dados de clima em tempo real para cidades dos EUA via [OpenWeatherMap](https://openweathermap.org/api) e carrega os dados brutos (JSON) em uma tabela no Snowflake para análise posterior.
+Python pipeline that collects real-time weather data for U.S. cities via [OpenWeatherMap](https://openweathermap.org/api) and loads the raw JSON data into a Snowflake table for downstream analysis.
 
-## Arquitetura
-
+## Architecture
 ```
-city.list.json (lista global de cidades da OpenWeatherMap)
-        │
-        ▼
-extract_cities.py  ──►  city_final_list.json (apenas cidades dos EUA: nome + coordenadas)
-        │
-        ▼
-weather_api_pipeline.py
-        │  para cada cidade:
-        │    1. chama a API do OpenWeatherMap
-        │    2. insere o JSON bruto na tabela RAW.raw_weather (Snowflake)
-        ▼
-   Snowflake (WEATHER_DB.RAW.raw_weather)
+city.list.json (OpenWeatherMap's global city list)
+│
+▼
+extract_cities.py ──► city_final_list.json (U.S. cities only: name + coordinates)
+│
+▼
+weather_API_script.py
+│ for each city:
+│ 1. calls the OpenWeatherMap API
+│ 2. inserts the raw JSON into the RAW.raw_weather table (Snowflake)
+▼
+Snowflake (WEATHER_DB.RAW.raw_weather)
 ```
 
-`find_country.py` é um script auxiliar usado durante a exploração inicial do dataset (não faz parte do fluxo principal).
+`find_country.py` is a small helper script used while exploring the dataset early on (not part of the main pipeline).
 
-Um exemplo da resposta da API está em [`sample_output/weather_data_sample.json`](sample_output/weather_data_sample.json).
+A sample API response is available at [`sample_output/weather_data_sample.json`](sample_output/weather_data_sample.json).
 
 ## Stack
 
 - Python 3
-- [requests](https://pypi.org/project/requests/) — chamadas à API do OpenWeatherMap
-- [snowflake-connector-python](https://pypi.org/project/snowflake-connector-python/) — carga no Snowflake
-- [python-dotenv](https://pypi.org/project/python-dotenv/) — variáveis de ambiente
+- [requests](https://pypi.org/project/requests/) — OpenWeatherMap API calls
+- [snowflake-connector-python](https://pypi.org/project/snowflake-connector-python/) — Snowflake loading
+- [python-dotenv](https://pypi.org/project/python-dotenv/) — environment variables
 
-## Estrutura do projeto
+## Project structure
 
-```
 weather-pipeline/
 ├── .env.example
 ├── .gitignore
 ├── README.md
 ├── requirements.txt
 ├── sample_output/
-│   └── weather_data_sample.json
+│ └── weather_data_sample.json
 └── src/
-    ├── extract_cities.py
-    ├── find_country.py
-    └── weather_api_pipeline.py
-```
+├── extract_cities.py
+├── find_country.py
+└── weather_API_script.py
+
 
 ## Setup
 
-1. Clone o repositório e crie um ambiente virtual:
+1. Clone the repository and create a virtual environment:
 
-   ```bash
-   git clone https://github.com/<seu-usuario>/weather-pipeline.git
+```bash
+   git clone https://github.com/<your-username>/weather-pipeline.git
    cd weather-pipeline
    python -m venv venv
    venv\Scripts\activate      # Windows
    pip install -r requirements.txt
-   ```
+```
 
-2. Copie `.env.example` para `.env` e preencha com suas credenciais (nunca commite o `.env`):
+2. Copy `.env.example` to `.env` and fill in your credentials (never commit `.env`):
 
-   ```bash
+```bash
    copy .env.example .env      # Windows
-   ```
+```
 
-   | Variável | Descrição |
+   | Variable | Description |
    |---|---|
-   | `API_KEY` | Chave da API do OpenWeatherMap |
-   | `SNOWFLAKE_USER` | Usuário do Snowflake |
-   | `SNOWFLAKE_PASSWORD` | Senha do Snowflake |
-   | `SNOWFLAKE_ACCOUNT` | Identificador da conta Snowflake |
-   | `SNOWFLAKE_WAREHOUSE` | Warehouse a ser usado |
-   | `SNOWFLAKE_DATABASE` | Database de destino |
-   | `SNOWFLAKE_SCHEMA` | Schema de destino |
-   | `SNOWFLAKE_ROLE` | Role usada na conexão |
+   | `API_KEY` | OpenWeatherMap API key |
+   | `SNOWFLAKE_USER` | Snowflake username |
+   | `SNOWFLAKE_PASSWORD` | Snowflake password |
+   | `SNOWFLAKE_ACCOUNT` | Snowflake account identifier |
+   | `SNOWFLAKE_WAREHOUSE` | Warehouse to use |
+   | `SNOWFLAKE_DATABASE` | Target database |
+   | `SNOWFLAKE_SCHEMA` | Target schema |
+   | `SNOWFLAKE_ROLE` | Role used for the connection |
 
-3. Baixe o dataset completo de cidades ([`city.list.json`](https://openweathermap.org/current#cityid) da OpenWeatherMap) e coloque na raiz do projeto.
+3. Download the full city dataset ([`city.list.json`](https://openweathermap.org/current#cityid) from OpenWeatherMap) and place it at the project root.
 
-4. Crie a tabela de destino no Snowflake:
+4. Create the destination table in Snowflake:
 
-   ```sql
+```sql
    CREATE TABLE IF NOT EXISTS raw_weather (
        raw_data VARIANT
    );
-   ```
-
-## Como rodar
-
-```bash
-python src/extract_cities.py       # gera city_final_list.json
-python src/weather_api_pipeline.py # coleta o clima e carrega no Snowflake
 ```
 
-## Melhorias futuras
+## Usage
 
-- Testes automatizados para as funções de extração e transformação
-- Agendamento via cron / GitHub Actions / Airflow para execução periódica
-- Camada de transformação (ex.: dbt) sobre os dados brutos no Snowflake
-- Retry com backoff exponencial nas chamadas à API
+```bash
+python src/extract_cities.py      # generates city_final_list.json
+python src/weather_API_script.py  # fetches weather data and loads it into Snowflake
+```
+
+## Future improvements
+
+- Automated tests for the extraction and transformation functions
+- Scheduling via cron / GitHub Actions / Airflow for periodic runs
+- A transformation layer (e.g., dbt) on top of the raw data in Snowflake
+- Exponential backoff retries on API calls
