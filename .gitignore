@@ -1,0 +1,17 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Large / generated data files (see README for how to regenerate)
+city.list.json
+city_final_list.json
+
+# OS / editor
+.DS_Store
+.vscode/
